@@ -6,3 +6,9 @@ claude-heartbeat.log
 .env
 .claude/
 .credentials.json
+
+# local deployment notes
+LOCAL-NOTES.md
+
+# personal one-click connect script (contains your VM IP)
+*.local.bat

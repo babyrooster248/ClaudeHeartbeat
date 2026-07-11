@@ -2,7 +2,7 @@
 
 > Keep Claude's **5-hour usage window** always anchored, 24/7, so it's ready the moment you sit down to work — no waiting for a reset.
 
-The recommended way to run it is a **free, always-on Linux VM** (Oracle Cloud "Always Free" — a *forever-free* tier, not a trial). It also runs on a Raspberry Pi or an Android phone (Termux). Every ~5 hours it sends a tiny message to Claude to keep opening a fresh window.
+The recommended way to run it is a **free, always-on Linux VM** (Google Cloud or Oracle Cloud *Always Free* — forever-free tiers, not trials). It also runs on a Raspberry Pi or an Android phone (Termux). Every ~5 hours it sends a tiny message to Claude to keep opening a fresh window.
 
 ---
 
@@ -37,24 +37,37 @@ Because **the heartbeat itself opens the window**, the reset cadence is steady a
 
 ## ☁️ Setup on a free cloud VM — recommended (no trial)
 
-A cloud VM is the most reliable option: server-grade uptime, no background-killing, and it side-steps the [Android sideloading restrictions coming in Sept 2026](#-a-note-on-android--sept-2026). Both options below are **Always Free** tiers (forever free, not a time-limited trial). They ask for a card to verify identity but **do not charge** on the free tier.
+A cloud VM is the most reliable host: server-grade uptime, no background-killing, and it side-steps the [Android sideloading restrictions coming in Sept 2026](#-a-note-on-android--sept-2026). Both options below are **Always Free** tiers (forever free, not a time-limited trial). They ask for a card to verify identity but **do not charge** on the free tier — use a virtual/limit card if you want extra peace of mind.
 
-### Option A — Oracle Cloud "Always Free" ⭐ (recommended)
+> ✅ **Field-tested** on a Google Cloud `e2-micro` (Ubuntu 22.04, 1 GB RAM + 2 GB swap).
 
-1. **Sign up** at [cloud.oracle.com](https://cloud.oracle.com) → *Start for free*. Pick your home region (you can't change it later). A card is required for verification; Always Free resources are not billed.
-2. **Create a VM**: Menu → *Compute* → *Instances* → *Create instance*.
-   - **Image**: Canonical **Ubuntu 22.04**.
-   - **Shape**: *Change shape* → **Ampere (Arm)** → `VM.Standard.A1.Flex`, set **1 OCPU / 6 GB** (well within the free 4 OCPU / 24 GB). If Arm capacity is unavailable in your region, use **`VM.Standard.E2.1.Micro`** (AMD, also Always Free).
-   - **SSH keys**: *Generate a key pair* and **download the private key** (or paste your own public key).
-   - Click **Create**. Note the instance's **public IP**.
-3. **SSH in** from your laptop (`ubuntu` is the default user for the Ubuntu image):
+### Option A — Google Cloud "Always Free" e2-micro ⭐ (recommended: reliably available)
+
+1. **Sign up** at [console.cloud.google.com](https://console.cloud.google.com), set up billing (a card is required; the e2-micro stays free), and create a project.
+2. **Create the VM**: *Compute Engine → VM instances → Create instance*.
+   - **Region** ⚠️: must be **`us-central1`**, `us-west1`, or `us-east1` — any other region is billed.
+   - **Machine**: series **E2** → **`e2-micro`**.
+   - **Boot disk**: Ubuntu 22.04 LTS, **Standard persistent disk**, **≤ 30 GB** (⚠️ not *Balanced*/SSD — those aren't free).
+   - **SSH key**: *Advanced options → Security → Add manually generated SSH keys* → paste your public key. The login **username comes from the key's trailing comment** (a key ending in `... claudeheartbeat` logs in as `claudeheartbeat`).
+   - **Create**, wait until it's running, and note the **External IP**.
+
+   > 💡 The cost estimate may show ~$7/month — that's the sticker price. Google applies the Always Free discount automatically at billing time, so a qualifying e2-micro is **$0**. Set a **$1 budget alert** (*Billing → Budgets & alerts*) for peace of mind.
+
+3. **SSH in** from your laptop (use `/` in the key path on Windows):
 
    ```sh
-   chmod 600 /path/to/your-private-key.key
-   ssh -i /path/to/your-private-key.key ubuntu@YOUR_PUBLIC_IP
+   ssh -i ~/.ssh/your_key USERNAME@YOUR_EXTERNAL_IP
    ```
 
-4. **Install Node + Claude Code and clone this repo** (on the VM):
+4. **Add 2 GB swap** (the e2-micro only has ~1 GB RAM):
+
+   ```sh
+   sudo fallocate -l 2G /swapfile && sudo chmod 600 /swapfile
+   sudo mkswap /swapfile && sudo swapon /swapfile
+   echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+   ```
+
+5. **Install Node + Claude Code and clone this repo**:
 
    ```sh
    curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
@@ -64,40 +77,39 @@ A cloud VM is the most reliable option: server-grade uptime, no background-killi
    chmod +x ~/ClaudeHeartbeat/*.sh
    ```
 
-5. **Log in to Claude** (on the VM):
+6. **Log in to Claude**:
 
    ```sh
    claude
    ```
 
-   Type `/login`. On a headless server it prints a URL — open it on any device, sign in, and paste the code back. Then type `/exit`. Verify:
+   Pick a theme, trust the folder, type `/login`, and follow the URL (sign in with your Claude subscription account — Google/email). Paste the code back if asked, then `/exit`.
+
+7. **Run it durably with systemd** (survives reboots and logout):
 
    ```sh
-   claude -p "ok"
-   ```
-
-6. **Run it durably with systemd** (survives reboots and logout):
-
-   ```sh
+   sudo loginctl enable-linger "$USER"
+   export XDG_RUNTIME_DIR="/run/user/$(id -u)"     # needed for systemctl --user over SSH
    mkdir -p ~/.config/systemd/user
    cp ~/ClaudeHeartbeat/systemd/claude-heartbeat.service ~/.config/systemd/user/
    systemctl --user daemon-reload
    systemctl --user enable --now claude-heartbeat
-   sudo loginctl enable-linger "$USER"     # keep it running without an active login shell
    ```
 
-   Check it:
+   Confirm the first ping:
 
    ```sh
    systemctl --user status claude-heartbeat
-   tail -n 20 ~/claude-heartbeat.log
+   tail -n 20 ~/claude-heartbeat.log     # should show:  ping ... done
    ```
 
 That's it — the VM now keeps your 5-hour window anchored 24/7.
 
-### Option B — Google Cloud "Always Free" e2-micro
+### Option B — Oracle Cloud "Always Free" (more powerful, but often out of capacity)
 
-Google Cloud includes one **always-free `e2-micro`** VM in `us-west1`, `us-central1`, or `us-east1` (separate from the 90-day trial credit). Create the e2-micro in one of those regions with an Ubuntu image, then follow **steps 3–6 above**. Note: e2-micro has 1 GB RAM, so it's tighter than the Oracle Arm option.
+Oracle's Arm **`VM.Standard.A1.Flex`** gives up to **4 OCPU / 24 GB free forever** — much beefier than the e2-micro. The catch: the Arm shape is **frequently "out of capacity"** in popular regions (and the AMD `VM.Standard.E2.1.Micro` can be too), and your **home region can't be changed** after signup, so pick carefully.
+
+Sign up at [cloud.oracle.com](https://cloud.oracle.com), create an **Ubuntu 22.04** instance (shape `VM.Standard.A1.Flex` at 1 OCPU / 6 GB, or `E2.1.Micro` as fallback), paste your SSH **public key**, then follow **steps 3–7 above** (the default SSH user for Oracle's Ubuntu image is `ubuntu`; you can skip the swap step if the VM has ≥ 4 GB RAM).
 
 ---
 
@@ -187,18 +199,38 @@ Example: you start at **9:00 AM** and burn quota in ~**2h** → schedule a ping 
 
 ---
 
-## 🩺 Check / Stop
+## 🩺 Managing the deployment
+
+**Connect to the VM** (Windows users: double-click [`connect-vm.bat`](connect-vm.bat) after editing it with your key path / user / IP):
 
 ```sh
-# Last 20 log lines
+ssh -i ~/.ssh/your_key USERNAME@YOUR_EXTERNAL_IP
+```
+
+**Once on the VM** (cloud / Pi, systemd):
+
+```sh
+# View heartbeat pings
 tail -n 20 ~/claude-heartbeat.log
+tail -f  ~/claude-heartbeat.log      # live follow (Ctrl+C to stop)
 
-# systemd (cloud VM / Pi)
-systemctl --user status claude-heartbeat
-systemctl --user stop claude-heartbeat
+# Service control
+systemctl --user status  claude-heartbeat
+systemctl --user restart claude-heartbeat
+systemctl --user stop    claude-heartbeat
+systemctl --user start   claude-heartbeat
+```
 
-# Termux / manual run
-pkill -f heartbeat.sh; termux-wake-unlock 2>/dev/null
+> If `systemctl --user` prints *"Failed to connect to bus"*, run this first (non-login SSH sessions don't set it):
+> ```sh
+> export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+> ```
+
+**Termux / manual run** (instead of systemd):
+
+```sh
+tail -n 20 ~/claude-heartbeat.log
+pkill -f heartbeat.sh; termux-wake-unlock 2>/dev/null   # stop
 ```
 
 ---
