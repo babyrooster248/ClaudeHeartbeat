@@ -203,16 +203,34 @@ Example: you start at **9:00 AM** and burn quota in ~**2h** → schedule a ping 
 
 ## 🔧 Configuration
 
-`heartbeat.sh` reads these environment variables (all have defaults):
+There are two scheduling engines. The systemd unit runs **method B** by default; switch its `ExecStart` to `heartbeat.sh` for method A.
+
+| | **Method B — `heartbeat.py`** (default) | **Method A — `heartbeat.sh`** |
+|---|---|---|
+| Picks the next ping by | The **real reset time** from the API header `anthropic-ratelimit-unified-5h-reset`, pinging just after it | A fixed **interval** after each successful ping |
+| Drift / weekly reset | **Immune** — always server truth | Self-heals within one cycle, but not aligned to the server |
+| Weekly cap | Reads the `7d`/unified reset and waits *exactly* until then | Retries every `RETRY` seconds |
+| Needs | `python3` (preinstalled on most Linux; Termux: `pkg install python`) | POSIX `sh` only |
+
+**Method B (`heartbeat.py`) environment variables:**
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `CLAUDE_HEARTBEAT_INTERVAL` | `18600` | Seconds to wait **after a successful ping**. 5h10m — comfortably over 5h so each ping lands *after* the old window expires. |
-| `CLAUDE_HEARTBEAT_RETRY` | `600` | Seconds to wait **after a failed ping** before retrying (e.g. weekly limit reached, network down). |
-| `CLAUDE_HEARTBEAT_MODEL` | `haiku` | Model used for the ping (haiku is light on quota). |
+| `CLAUDE_HEARTBEAT_MODEL` | `claude-haiku-4-5-20251001` | Model id used for the ping. |
+| `CLAUDE_HEARTBEAT_BUFFER` | `60` | Seconds to wait *after* the reported reset before the next ping. |
+| `CLAUDE_HEARTBEAT_RETRY` | `600` | Seconds to wait after a network / unexpected error. |
 | `CLAUDE_HEARTBEAT_LOG` | `$HOME/claude-heartbeat.log` | Log file path. |
 
-**Weekly-limit handling.** On the Max plan you can hit a *weekly* cap (separate from the 5h window); while blocked, pings fail. The loop times the 5h wait **only from a successful ping** and otherwise retries every `RETRY` seconds — so when the weekly reset lands, the schedule **re-anchors itself** instead of drifting.
+**Method A (`heartbeat.sh`) environment variables:**
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `CLAUDE_HEARTBEAT_INTERVAL` | `18600` | Seconds after a **successful** ping (5h10m — comfortably over 5h). |
+| `CLAUDE_HEARTBEAT_RETRY` | `600` | Seconds after a **failed** ping before retrying. |
+| `CLAUDE_HEARTBEAT_MODEL` | `haiku` | Model used for the ping. |
+| `CLAUDE_HEARTBEAT_LOG` | `$HOME/claude-heartbeat.log` | Log file path. |
+
+> **How method B authenticates:** it reads the OAuth token from `~/.claude/.credentials.json` and calls the API directly. If the access token has expired it runs `claude -p` once to refresh it, then retries — so Claude Code must still be installed and logged in on the host.
 
 ---
 

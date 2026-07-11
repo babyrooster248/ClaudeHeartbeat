@@ -5,7 +5,9 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-ExecStart=%h/ClaudeHeartbeat/heartbeat.sh
+# Method B (server-truth, recommended). For the simple interval-based
+# method A, change this to: %h/ClaudeHeartbeat/heartbeat.sh
+ExecStart=%h/ClaudeHeartbeat/heartbeat.py
 Restart=always
 RestartSec=60
 
