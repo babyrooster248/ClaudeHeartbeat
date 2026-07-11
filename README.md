@@ -207,9 +207,12 @@ Example: you start at **9:00 AM** and burn quota in ~**2h** → schedule a ping 
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `CLAUDE_HEARTBEAT_INTERVAL` | `18600` | Seconds between pings. 5h10m — comfortably over 5h so each ping lands *after* the old window expires. |
+| `CLAUDE_HEARTBEAT_INTERVAL` | `18600` | Seconds to wait **after a successful ping**. 5h10m — comfortably over 5h so each ping lands *after* the old window expires. |
+| `CLAUDE_HEARTBEAT_RETRY` | `600` | Seconds to wait **after a failed ping** before retrying (e.g. weekly limit reached, network down). |
 | `CLAUDE_HEARTBEAT_MODEL` | `haiku` | Model used for the ping (haiku is light on quota). |
 | `CLAUDE_HEARTBEAT_LOG` | `$HOME/claude-heartbeat.log` | Log file path. |
+
+**Weekly-limit handling.** On the Max plan you can hit a *weekly* cap (separate from the 5h window); while blocked, pings fail. The loop times the 5h wait **only from a successful ping** and otherwise retries every `RETRY` seconds — so when the weekly reset lands, the schedule **re-anchors itself** instead of drifting.
 
 ---
 
