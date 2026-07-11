@@ -6,6 +6,20 @@ The recommended way to run it is a **free, always-on Linux VM** (Google Cloud or
 
 ---
 
+## Contents
+
+- [The idea & how it works](#-the-idea--how-it-works)
+- [Requirements](#-requirements)
+- [Setup on a free cloud VM (recommended)](#-setup-on-a-free-cloud-vm--recommended-no-trial)
+- [Setup on Android (Termux)](#-setup-on-android-termux--alternative)
+- [Pre-warm mode](#-optional-pre-warm-mode)
+- [Configuration](#-configuration)
+- [Managing the deployment](#-managing-the-deployment)
+- [Notes & risks](#-notes--risks-please-read)
+- [License](#-license)
+
+---
+
 ## 🧠 The idea & how it works
 
 Claude subscriptions meter usage in a **rolling 5-hour window**: the window starts at your **first message** and resets exactly 5 hours later.
