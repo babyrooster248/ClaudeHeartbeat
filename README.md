@@ -45,6 +45,7 @@ Because **the heartbeat itself opens the window**, the reset cadence is steady a
 
 - An **always-on** host — a free cloud VM (recommended), a Raspberry Pi, or a charging Android phone.
 - A **Claude subscription** (Pro/Max) to log in with `claude`.
+- **`python3`** on the host for the default **method B** (preinstalled on most Linux; Termux: `pkg install python`). Not needed if you use method A.
 - An internet connection.
 
 ---
@@ -114,7 +115,7 @@ A cloud VM is the most reliable host: server-grade uptime, no background-killing
 
    ```sh
    systemctl --user status claude-heartbeat
-   tail -n 20 ~/claude-heartbeat.log     # should show:  ping ... done
+   tail -n 20 ~/claude-heartbeat.log     # method B: "ping ok ..."  |  method A: "ping ... done"
    ```
 
 That's it — the VM now keeps your 5-hour window anchored 24/7.
@@ -290,6 +291,7 @@ Notes:
 - **Token security:** after `/login`, your Claude token is stored on the host (`~/.claude/`). Anyone who gets the host/token can **use your subscription**. Lock down the VM (SSH keys only, no password login) and keep the device secure.
 - **Fair use / ToS:** this automatically calls the API to **keep a window open**. It uses **your own quota** and each ping is a tiny message, but it is still a way of gaming the limit from a fair-use standpoint. **Use at your own risk.**
 - **Weekly limit (Max plan):** beyond the 5h window there's also a weekly cap — the heartbeat nibbles at it too.
+- **Method B uses undocumented API details** (the OAuth flow, the `anthropic-beta` header, and the `anthropic-ratelimit-*` response headers). If Anthropic changes them, method B can stop working — switch the systemd unit's `ExecStart` to `heartbeat.sh` (method A) as a fallback.
 - No guarantee you'll always have a *full* 5 hours when you sit down: you land at an arbitrary point in the current window (0–5h left). The upside: you **never wait long**, because a fresh window always follows right after.
 
 ---
