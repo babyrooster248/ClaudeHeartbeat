@@ -6,7 +6,7 @@
 # always rolling. Works on Termux (Android) and any always-on Linux box.
 
 LOG="${CLAUDE_HEARTBEAT_LOG:-$HOME/claude-heartbeat.log}"
-INTERVAL="${CLAUDE_HEARTBEAT_INTERVAL:-18120}"   # 5h 02m — slightly over 5h so
+INTERVAL="${CLAUDE_HEARTBEAT_INTERVAL:-18600}"   # 5h 10m — comfortably over 5h so
                                                  # each ping lands AFTER the
                                                  # previous window expires.
 MODEL="${CLAUDE_HEARTBEAT_MODEL:-haiku}"         # cheap model to spare quota
