@@ -85,10 +85,10 @@ A cloud VM is the most reliable host: server-grade uptime, no background-killing
 
    ```sh
    curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-   sudo apt-get install -y nodejs git
+   sudo apt-get install -y nodejs git python3
    sudo npm install -g @anthropic-ai/claude-code
    git clone https://github.com/babyrooster248/ClaudeHeartbeat.git ~/ClaudeHeartbeat
-   chmod +x ~/ClaudeHeartbeat/*.sh
+   chmod +x ~/ClaudeHeartbeat/*.sh ~/ClaudeHeartbeat/*.py
    ```
 
 6. **Log in to Claude**:
@@ -99,7 +99,7 @@ A cloud VM is the most reliable host: server-grade uptime, no background-killing
 
    Pick a theme, trust the folder, type `/login`, and follow the URL (sign in with your Claude subscription account — Google/email). Paste the code back if asked, then `/exit`.
 
-7. **Run it durably with systemd** (survives reboots and logout):
+7. **Run it durably with systemd** (survives reboots and logout). The unit runs **method B** (`heartbeat.py`, server-truth — needs `python3`, installed above) by default; to use the simpler interval-based **method A**, change the unit's `ExecStart` to `heartbeat.sh`. See [Configuration](#-configuration) for the difference.
 
    ```sh
    sudo loginctl enable-linger "$USER"
