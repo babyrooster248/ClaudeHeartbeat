@@ -233,6 +233,21 @@ tail -n 20 ~/claude-heartbeat.log
 pkill -f heartbeat.sh; termux-wake-unlock 2>/dev/null   # stop
 ```
 
+### 🪟 Windows one-click helpers (.bat)
+
+Two batch files let you manage the VM without typing SSH commands. Open each one, edit the three values at the top (`KEY`, `VMUSER`, `VMIP`) to match your setup, then **double-click** to run:
+
+| File | What it does |
+|---|---|
+| [`connect-vm.bat`](connect-vm.bat) | Opens an interactive SSH session into the VM. |
+| [`next-ping.bat`](next-ping.bat) | Prints when the next auto-ping will fire (runs [`next-ping.sh`](next-ping.sh) on the VM), then exits. |
+
+Notes:
+- `next-ping.bat` needs [`next-ping.sh`](next-ping.sh) on the VM — it ships in this repo, so it's already there after you `git clone`.
+- These rely on the built-in **Windows OpenSSH client** (default on Windows 10/11).
+- In the key path use forward slashes or `%USERPROFILE%` (e.g. `%USERPROFILE%\.ssh\your_key`) to avoid backslash-escaping issues.
+- 💡 Keep your real, filled-in copies as `*.local.bat` (e.g. `connect-vm.local.bat`); add `*.local.bat` to `.gitignore` so your VM's IP never gets committed.
+
 ---
 
 ## ⚠️ Notes & risks (please read)
