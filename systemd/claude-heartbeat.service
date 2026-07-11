@@ -1,0 +1,13 @@
+[Unit]
+Description=ClaudeHeartbeat - keep the Claude 5-hour window anchored
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=%h/ClaudeHeartbeat/heartbeat.sh
+Restart=always
+RestartSec=60
+
+[Install]
+WantedBy=default.target

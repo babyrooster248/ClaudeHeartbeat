@@ -1,0 +1,8 @@
+# logs
+*.log
+claude-heartbeat.log
+
+# local env / credentials — NEVER commit these
+.env
+.claude/
+.credentials.json
